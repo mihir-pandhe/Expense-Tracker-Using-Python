@@ -8,15 +8,25 @@ def display_menu():
 
 
 def record_expense():
-    amount = input("Enter amount: ")
-    category = input("Enter category: ")
-    description = input("Enter description: ")
+    while True:
+        try:
+            amount = float(input("Enter amount: "))
+            if amount <= 0:
+                print("Amount must be positive. Please try again.")
+                continue
+        except ValueError:
+            print("Invalid amount. Please enter a numerical value.")
+            continue
 
-    with open("expenses.csv", mode="a", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow([amount, category, description])
+        category = input("Enter category: ")
+        description = input("Enter description: ")
 
-    print("Expense recorded successfully.")
+        with open("expenses.csv", mode="a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([amount, category, description])
+
+        print("Expense recorded successfully.")
+        break
 
 
 def main():
