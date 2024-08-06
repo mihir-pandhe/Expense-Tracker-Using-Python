@@ -60,12 +60,16 @@ def filter_expenses():
                 return
 
             filter_type = input(
-                "Filter by (1) Category or (2) Date Range or (3) Multiple Categories: "
+                "Filter by (1) Category, (2) Date Range, or (3) Multiple Categories: "
             )
 
             if filter_type == "1":
                 category = input("Enter category to filter by: ")
-                filtered_expenses = [exp for exp in expenses if exp[1] == category]
+                filtered_expenses = [
+                    exp
+                    for exp in expenses
+                    if exp[1].strip().lower() == category.strip().lower()
+                ]
                 view_expenses(filtered_expenses)
             elif filter_type == "2":
                 start_date = input("Enter start date (YYYY-MM-DD): ")
@@ -86,8 +90,10 @@ def filter_expenses():
                 view_expenses(filtered_expenses)
             elif filter_type == "3":
                 categories = input("Enter categories separated by commas: ").split(",")
-                categories = [cat.strip() for cat in categories]
-                filtered_expenses = [exp for exp in expenses if exp[1] in categories]
+                categories = [cat.strip().lower() for cat in categories]
+                filtered_expenses = [
+                    exp for exp in expenses if exp[1].strip().lower() in categories
+                ]
                 view_expenses(filtered_expenses)
             else:
                 print("Invalid filter option.")
@@ -109,7 +115,7 @@ def show_summary():
             category_totals = defaultdict(float)
 
             for exp in expenses:
-                category_totals[exp[1]] += float(exp[0])
+                category_totals[exp[1].strip()] += float(exp[0])
 
             print("\nSummary:")
             print(f"Total Expenses: ${total_expenses:.2f}")
@@ -136,12 +142,12 @@ def generate_report():
                 date = datetime.strptime(exp[3], "%Y-%m-%d")
                 month = date.strftime("%Y-%m")
                 monthly_totals[month] += float(exp[0])
-                category_totals[exp[1]] += float(exp[0])
+                category_totals[exp[1].strip()] += float(exp[0])
 
             with open("report.txt", mode="w") as file:
                 file.write("Expense Report\n\n")
                 file.write("Monthly Totals:\n")
-                for month, total in monthly_totals.items():
+                for month, total in sorted(monthly_totals.items()):
                     file.write(f"{month}: ${total:.2f}\n")
                 file.write("\nTop Spending Categories:\n")
                 for category, total in sorted(
