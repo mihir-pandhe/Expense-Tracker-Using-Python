@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+from collections import defaultdict
 
 
 def display_menu():
@@ -8,7 +9,8 @@ def display_menu():
     print("2. View Expenses")
     print("3. Filter Expenses")
     print("4. Show Summary")
-    print("5. Exit")
+    print("5. Generate Report")
+    print("6. Exit")
 
 
 def record_expense():
@@ -57,7 +59,9 @@ def filter_expenses():
                 print("No expenses recorded.")
                 return
 
-            filter_type = input("Filter by (1) Category or (2) Date Range: ")
+            filter_type = input(
+                "Filter by (1) Category or (2) Date Range or (3) Multiple Categories: "
+            )
 
             if filter_type == "1":
                 category = input("Enter category to filter by: ")
@@ -80,6 +84,11 @@ def filter_expenses():
                     if start_date <= datetime.strptime(exp[3], "%Y-%m-%d") <= end_date
                 ]
                 view_expenses(filtered_expenses)
+            elif filter_type == "3":
+                categories = input("Enter categories separated by commas: ").split(",")
+                categories = [cat.strip() for cat in categories]
+                filtered_expenses = [exp for exp in expenses if exp[1] in categories]
+                view_expenses(filtered_expenses)
             else:
                 print("Invalid filter option.")
     except FileNotFoundError:
@@ -97,20 +106,50 @@ def show_summary():
                 return
 
             total_expenses = sum(float(exp[0]) for exp in expenses)
-            category_totals = {}
+            category_totals = defaultdict(float)
 
             for exp in expenses:
-                category = exp[1]
-                amount = float(exp[0])
-                if category in category_totals:
-                    category_totals[category] += amount
-                else:
-                    category_totals[category] = amount
+                category_totals[exp[1]] += float(exp[0])
 
             print("\nSummary:")
             print(f"Total Expenses: ${total_expenses:.2f}")
             for category, total in category_totals.items():
                 print(f"Total for {category}: ${total:.2f}")
+    except FileNotFoundError:
+        print("No expense data found.")
+
+
+def generate_report():
+    try:
+        with open("expenses.csv", mode="r") as file:
+            reader = csv.reader(file)
+            expenses = [row for row in reader if len(row) == 4]
+
+            if not expenses:
+                print("No expenses recorded.")
+                return
+
+            monthly_totals = defaultdict(float)
+            category_totals = defaultdict(float)
+
+            for exp in expenses:
+                date = datetime.strptime(exp[3], "%Y-%m-%d")
+                month = date.strftime("%Y-%m")
+                monthly_totals[month] += float(exp[0])
+                category_totals[exp[1]] += float(exp[0])
+
+            with open("report.txt", mode="w") as file:
+                file.write("Expense Report\n\n")
+                file.write("Monthly Totals:\n")
+                for month, total in monthly_totals.items():
+                    file.write(f"{month}: ${total:.2f}\n")
+                file.write("\nTop Spending Categories:\n")
+                for category, total in sorted(
+                    category_totals.items(), key=lambda x: x[1], reverse=True
+                ):
+                    file.write(f"{category}: ${total:.2f}\n")
+
+            print("Report generated successfully. Check 'report.txt'.")
     except FileNotFoundError:
         print("No expense data found.")
 
@@ -135,6 +174,8 @@ def main():
         elif choice == "4":
             show_summary()
         elif choice == "5":
+            generate_report()
+        elif choice == "6":
             break
         else:
             print("Invalid option. Please try again.")
