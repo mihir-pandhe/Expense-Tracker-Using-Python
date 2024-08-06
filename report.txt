@@ -1,7 +1,8 @@
 Expense Report
 
 Monthly Totals:
-2024-08: $199.00
+2024-08: $299.00
 
 Top Spending Categories:
 Food: $199.00
+ZZ: $100.00

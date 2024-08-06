@@ -14,15 +14,17 @@ class ExpenseTracker:
             "5": self.generate_report,
             "6": self.exit_program,
         }
+        self.file_path = "expenses.csv"
 
     def display_menu(self):
-        print("\nExpense Tracker")
+        print("\n--- Expense Tracker ---")
         print("1. Record Expense")
         print("2. View Expenses")
         print("3. Filter Expenses")
         print("4. Show Summary")
         print("5. Generate Report")
         print("6. Exit")
+        print("-----------------------")
 
     def record_expense(self):
         while True:
@@ -35,16 +37,27 @@ class ExpenseTracker:
                 print("Invalid amount. Please enter a numerical value.")
                 continue
 
-            category = input("Enter category: ")
-            description = input("Enter description: ")
+            category = input("Enter category: ").strip()
+            description = input("Enter description: ").strip()
 
-            with open("expenses.csv", mode="a", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerow(
-                    [amount, category, description, datetime.now().strftime("%Y-%m-%d")]
-                )
+            if not category or not description:
+                print("Category and description cannot be empty. Please try again.")
+                continue
 
-            print("Expense recorded successfully.")
+            try:
+                with open(self.file_path, mode="a", newline="") as file:
+                    writer = csv.writer(file)
+                    writer.writerow(
+                        [
+                            amount,
+                            category,
+                            description,
+                            datetime.now().strftime("%Y-%m-%d"),
+                        ]
+                    )
+                print("Expense recorded successfully.")
+            except IOError:
+                print("An error occurred while writing to the file.")
             break
 
     def view_expenses(self):
@@ -79,11 +92,9 @@ class ExpenseTracker:
             print("Invalid filter option.")
 
     def filter_by_category(self, expenses):
-        category = input("Enter category to filter by: ")
+        category = input("Enter category to filter by: ").strip().lower()
         filtered_expenses = [
-            exp
-            for exp in expenses
-            if exp[1].strip().lower() == category.strip().lower()
+            exp for exp in expenses if exp[1].strip().lower() == category
         ]
         self.view_expenses_list(filtered_expenses)
 
@@ -145,25 +156,31 @@ class ExpenseTracker:
             monthly_totals[month] += float(exp[0])
             category_totals[exp[1].strip()] += float(exp[0])
 
-        with open("report.txt", mode="w") as file:
-            file.write("Expense Report\n\n")
-            file.write("Monthly Totals:\n")
-            for month, total in sorted(monthly_totals.items()):
-                file.write(f"{month}: ${total:.2f}\n")
-            file.write("\nTop Spending Categories:\n")
-            for category, total in sorted(
-                category_totals.items(), key=lambda x: x[1], reverse=True
-            ):
-                file.write(f"{category}: ${total:.2f}\n")
-
-        print("Report generated successfully. Check 'report.txt'.")
+        try:
+            with open("report.txt", mode="w") as file:
+                file.write("Expense Report\n\n")
+                file.write("Monthly Totals:\n")
+                for month, total in sorted(monthly_totals.items()):
+                    file.write(f"{month}: ${total:.2f}\n")
+                file.write("\nTop Spending Categories:\n")
+                for category, total in sorted(
+                    category_totals.items(), key=lambda x: x[1], reverse=True
+                ):
+                    file.write(f"{category}: ${total:.2f}\n")
+            print("Report generated successfully. Check 'report.txt'.")
+        except IOError:
+            print("An error occurred while writing the report file.")
 
     def load_expenses(self):
         try:
-            with open("expenses.csv", mode="r") as file:
+            with open(self.file_path, mode="r") as file:
                 reader = csv.reader(file)
                 return [row for row in reader if len(row) == 4]
         except FileNotFoundError:
+            print("No expense data found.")
+            return []
+        except IOError:
+            print("An error occurred while reading the file.")
             return []
 
     def view_expenses_list(self, expenses):
@@ -183,7 +200,7 @@ class ExpenseTracker:
     def main(self):
         while True:
             self.display_menu()
-            choice = input("Select an option: ")
+            choice = input("Select an option: ").strip()
             action = self.menu_options.get(choice)
             if action:
                 action()
