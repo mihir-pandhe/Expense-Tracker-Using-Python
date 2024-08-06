@@ -1,5 +1,4 @@
 import csv
-from operator import itemgetter
 from datetime import datetime
 
 
@@ -7,7 +6,9 @@ def display_menu():
     print("\nExpense Tracker")
     print("1. Record Expense")
     print("2. View Expenses")
-    print("3. Exit")
+    print("3. Filter Expenses")
+    print("4. Show Summary")
+    print("5. Exit")
 
 
 def record_expense():
@@ -34,7 +35,19 @@ def record_expense():
         break
 
 
-def view_expenses():
+def view_expenses(expenses):
+    if not expenses:
+        print("No expenses recorded.")
+        return
+
+    print("\nExpenses:")
+    for expense in expenses:
+        print(
+            f"Date: {expense[3]}, Amount: {expense[0]}, Category: {expense[1]}, Description: {expense[2]}"
+        )
+
+
+def filter_expenses():
     try:
         with open("expenses.csv", mode="r") as file:
             reader = csv.reader(file)
@@ -44,15 +57,60 @@ def view_expenses():
                 print("No expenses recorded.")
                 return
 
-            sorted_expenses = sorted(
-                expenses, key=itemgetter(3, 0)
-            )
+            filter_type = input("Filter by (1) Category or (2) Date Range: ")
 
-            print("\nExpenses:")
-            for expense in sorted_expenses:
-                print(
-                    f"Date: {expense[3]}, Amount: {expense[0]}, Category: {expense[1]}, Description: {expense[2]}"
-                )
+            if filter_type == "1":
+                category = input("Enter category to filter by: ")
+                filtered_expenses = [exp for exp in expenses if exp[1] == category]
+                view_expenses(filtered_expenses)
+            elif filter_type == "2":
+                start_date = input("Enter start date (YYYY-MM-DD): ")
+                end_date = input("Enter end date (YYYY-MM-DD): ")
+
+                try:
+                    start_date = datetime.strptime(start_date, "%Y-%m-%d")
+                    end_date = datetime.strptime(end_date, "%Y-%m-%d")
+                except ValueError:
+                    print("Invalid date format. Please use YYYY-MM-DD.")
+                    return
+
+                filtered_expenses = [
+                    exp
+                    for exp in expenses
+                    if start_date <= datetime.strptime(exp[3], "%Y-%m-%d") <= end_date
+                ]
+                view_expenses(filtered_expenses)
+            else:
+                print("Invalid filter option.")
+    except FileNotFoundError:
+        print("No expense data found.")
+
+
+def show_summary():
+    try:
+        with open("expenses.csv", mode="r") as file:
+            reader = csv.reader(file)
+            expenses = [row for row in reader if len(row) == 4]
+
+            if not expenses:
+                print("No expenses recorded.")
+                return
+
+            total_expenses = sum(float(exp[0]) for exp in expenses)
+            category_totals = {}
+
+            for exp in expenses:
+                category = exp[1]
+                amount = float(exp[0])
+                if category in category_totals:
+                    category_totals[category] += amount
+                else:
+                    category_totals[category] = amount
+
+            print("\nSummary:")
+            print(f"Total Expenses: ${total_expenses:.2f}")
+            for category, total in category_totals.items():
+                print(f"Total for {category}: ${total:.2f}")
     except FileNotFoundError:
         print("No expense data found.")
 
@@ -65,8 +123,18 @@ def main():
         if choice == "1":
             record_expense()
         elif choice == "2":
-            view_expenses()
+            try:
+                with open("expenses.csv", mode="r") as file:
+                    reader = csv.reader(file)
+                    expenses = [row for row in reader if len(row) == 4]
+                view_expenses(expenses)
+            except FileNotFoundError:
+                print("No expense data found.")
         elif choice == "3":
+            filter_expenses()
+        elif choice == "4":
+            show_summary()
+        elif choice == "5":
             break
         else:
             print("Invalid option. Please try again.")
